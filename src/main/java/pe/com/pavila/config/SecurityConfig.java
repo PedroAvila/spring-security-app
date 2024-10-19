@@ -2,6 +2,7 @@ package pe.com.pavila.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,6 +23,27 @@ import pe.com.pavila.service.UserDetailServiceImpl;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)
+            throws Exception {
+        return httpSecurity
+                .csrf(csrf -> csrf.disable())
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(http -> {
+                    // ? Configurar los endpoints públicos
+                    http.requestMatchers(HttpMethod.GET, "/auth/hello").permitAll();
+
+                    // ? Configurar los endpoints privados
+                    http.requestMatchers(HttpMethod.POST, "/auth/post").hasAnyRole("ADMIN", "DEVELOPER");
+                    http.requestMatchers(HttpMethod.PATCH, "/auth/patch").hasAnyAuthority("REFACTOR");
+
+                    // ? Configurar el resto de endpoints - NO ESPECIFICADOS
+                    http.anyRequest().denyAll();
+                })
+                .build();
+    }
+
     // @Bean
     // public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)
     // throws Exception {
@@ -30,28 +52,8 @@ public class SecurityConfig {
     // .httpBasic(Customizer.withDefaults())
     // .sessionManagement(session ->
     // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-    // .authorizeHttpRequests(http -> {
-    // // ? Configurar los endpoints públicos
-    // http.requestMatchers(HttpMethod.GET, "/auth/hello").permitAll();
-
-    // // ? Configurar los endpoints privados
-    // http.requestMatchers(HttpMethod.GET,
-    // "/auth/hello-secured").hasAuthority("CREATE");
-
-    // // ? Configurar el resto de endpoints - NO ESPECIFICADOS
-    // http.anyRequest().denyAll();
-    // })
     // .build();
     // }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .build();
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(
